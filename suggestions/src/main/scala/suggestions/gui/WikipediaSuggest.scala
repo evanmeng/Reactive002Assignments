@@ -95,7 +95,7 @@ object WikipediaSuggest extends SimpleSwingApplication with ConcreteSwingApi wit
     }
 
     // TO IMPLEMENT
-    val selections: Observable[String] = button.clicks.map(btn => searchTermField.text)
+    val selections: Observable[String] = button.clicks.flatMap(btn => Observable.from(suggestionList.selection.items))
 
     // TO IMPLEMENT
     val pages: Observable[Try[String]] = selections.concatRecovered(selection => Observable.from(wikipediaPage(selection)))

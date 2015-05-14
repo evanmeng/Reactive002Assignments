@@ -1,7 +1,6 @@
 package suggestions
 
 
-
 import language.postfixOps
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -26,6 +25,7 @@ class WikipediaApiTest extends FunSuite {
         List(term)
       }
     }
+
     def wikipediaPage(term: String) = Future {
       "Title: " + term
     }
@@ -52,7 +52,7 @@ class WikipediaApiTest extends FunSuite {
   }
   test("WikipediaApi should correctly use concatRecovered") {
     val requests = Observable.just(1, 2, 3)
-    val remoteComputation = (n: Int) => Observable.just(0 to n : _*)
+    val remoteComputation = (n: Int) => Observable.just(0 to n: _*)
     val responses = requests concatRecovered remoteComputation
     val sum = responses.foldLeft(0) { (acc, tn) =>
       tn match {
@@ -66,5 +66,19 @@ class WikipediaApiTest extends FunSuite {
     }
     assert(total == (1 + 1 + 2 + 1 + 2 + 3), s"Sum: $total")
   }
+  test("timeout should complete and return first value") {
+    val requests = Observable.just(1, 2, 3)
+    val zipped = requests.zip(Observable.interval(700 millis)).timedOut(1L)
+    zipped.subscribe {
+      tp => assert(tp._1 == 1)
+    }
+  }
 
+  //    [Test Description] Observable(1, 2, 3).zip(Observable.interval(700 millis)).timedOut(1L) should return the first value, and complete without errors
+  //  [Observed Error] completed was true, and failed was false, but 6 did not equal 1 completed: true, failed: false, observed sum: 6
+  //  [Lost Points] 5
+  //
+  //    [Test Description] correctly compose the streams that have errors using concatRecovered
+  //  [Observed Error] Set(Success("erik (Computer Scientist)"), Failure(suggestions.WikipediaApiTest$WhitespaceException)) did not equal Set(Success("erik (Computer Scientist)"), Failure(suggestions.WikipediaApiTest$WhitespaceException), Success("martin (Computer Scientist)")) Set(Success(erik (Computer Scientist)), Failure(suggestions.WikipediaApiTest$WhitespaceException))
+  //    [Lost Points] 4
 }
