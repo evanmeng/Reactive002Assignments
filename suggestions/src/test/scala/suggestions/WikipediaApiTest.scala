@@ -69,9 +69,24 @@ class WikipediaApiTest extends FunSuite {
   test("timeout should complete and return first value") {
     val requests = Observable.just(1, 2, 3)
     val zipped = requests.zip(Observable.interval(700 millis)).timedOut(1L)
+    var r = -1
     zipped.subscribe {
-      tp => assert(tp._1 == 1)
+      tp => r = tp._1
     }
+    assert(r == 1)
+  }
+  test("concatRecovered given test case 2") {
+    val request = Observable.just(1, 2, 3).concatRecovered(num => Observable.just(num, num, num))
+    val expectedString = "List(Success(1), Success(1), Success(1), Success(2), Success(2), Success(2), Success(3), Success(3), Success(3))"
+    val actual = request.toBlocking.toList.toString
+    assert(actual == expectedString, actual)
+  }
+  test("concatRecovered given test case 1") {
+    val requestStream = Observable.from(1 to 5)
+    def requestMethod(num: Int) = if (num != 4) Observable.just(num) else Observable.error(new Exception)
+    val actual = requestStream.concatRecovered(requestMethod).toBlocking.toList
+    println(actual.toString)
+    assert(actual.toString == "List(Success(1), Success(2), Success(3), Failure(java.lang.Exception), Success(5))")
   }
 
   //    [Test Description] Observable(1, 2, 3).zip(Observable.interval(700 millis)).timedOut(1L) should return the first value, and complete without errors
